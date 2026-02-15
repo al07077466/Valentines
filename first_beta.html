@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>360 Interactive Space with Blanket + 3D Models</title>
+
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- Orbit Controls -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <!-- GLTF Loader -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+
+    <script>
+        let scene, camera, renderer, controls, blanket;
+
+        // Helper function (moved outside so both models can use it)
+        function degToRad(deg) {
+            return deg * Math.PI / 180;
+        }
+
+        // Scene
+        scene = new THREE.Scene();
+
+        // Camera
+        camera = new THREE.PerspectiveCamera(
+            75,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            1000
+        );
+        camera.position.set(0, 1, 0);
+
+        // Renderer
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio); document.body.appendChild(renderer.domElement);
+
+        // 360 Background Sphere
+        const sphereGeometry = new THREE.SphereGeometry(50, 60, 40);
+        const sphereTexture = new THREE.TextureLoader().load("https://lh3.googleusercontent.com/gpms-cs-s/AFfmt2YxIQRjzFMuCPvY1rdDLQkuwS1JyhxVOYTBTqWxjAb3IzllqmtTZoYbKRDzByYcGFFMc5qslt5wSseH-661QrGTu4YPa1Qv0NnIYOruFvgi0_STgQOWHDQ1dQwcToGapH4J8IMZOA=w7680-h3840");
+
+        const sphereMaterial = new THREE.MeshBasicMaterial({
+            map: sphereTexture,
+            side: THREE.BackSide
+        });
+
+        const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+        scene.add(sphere);
+
+        // Blanket
+        const blanketTexture = new THREE.TextureLoader().load('picnic.png');
+        blanketTexture.magFilter = THREE.NearestFilter;
+        blanketTexture.minFilter = THREE.NearestFilter;
+
+        const blanketGeometry = new THREE.PlaneGeometry(20, 20);
+
+        const blanketMaterial = new THREE.MeshBasicMaterial({
+            map: blanketTexture,
+            side: THREE.DoubleSide,
+            transparent: true,
+            alphaTest: 0.5
+        });
+
+        blanket = new THREE.Mesh(blanketGeometry, blanketMaterial);
+        blanket.rotation.x = -Math.PI / 2;
+        blanket.position.set(6.5, -10, 0);
+        scene.add(blanket);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(5, 10, 7);
+        scene.add(directionalLight);
+
+        const loader = new THREE.GLTFLoader();
+
+        // ======================
+        // TULIPS MODEL
+        // ======================
+        loader.load('tulips.glb', function (gltf) {
+            const tulips = gltf.scene;
+
+            tulips.scale.set(3.5, 3.5, 3.5);
+            tulips.position.set(9, -9.2, -7);
+            tulips.rotation.x = degToRad(270);
+            tulips.rotation.y = degToRad(0);
+            tulips.rotation.z = degToRad(60);
+
+            scene.add(tulips);
+        }, undefined, function (error) {
+            console.error("Tulips failed to load:", error);
+        });
+
+        // ======================
+        // INSTAX MODEL
+        // ======================
+        loader.load('instax.glb', function (gltf) {
+            const instax = gltf.scene;
+
+            instax.scale.set(1, 1, 1);
+
+            // Positioned on right corner of blanket
+            instax.position.set(9, -8.8, 7);
+
+            instax.rotation.x = degToRad(0);
+            instax.rotation.y = 7 * Math.PI / 9;
+            instax.rotation.z = degToRad(0);
+
+            scene.add(instax);
+        }, undefined, function (error) {
+            console.error("Instax failed to load:", error);
+        });
+
+        // Controls
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableZoom = false;
+        controls.enablePan = false;
+        controls.rotateSpeed = 0.5;
+
+        // Resize Handling
+        window.addEventListener('resize', () => {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+        });
+
+        // Animation Loop
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        animate();
+    </script>
+</body>
+
+</html>
